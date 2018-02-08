@@ -66,6 +66,9 @@ cdef class m021v4l:
         )
         cdef DTYPE_t* pframe = &(frame[0,0,0])
 
-        m021_v4l2.m021_grab_bgr(&self._obj, pframe, self.bcorr, self.gcorr, self.rcorr)
+        ret = m021_v4l2.m021_grab_bgr(&self._obj, pframe, self.bcorr, self.gcorr, self.rcorr)
+        if ( ret != 0 ):
+            raise Exception("Invalid Image: {}".format(ret))
         ts = _get_ts()
+
         return(frame, ts)
