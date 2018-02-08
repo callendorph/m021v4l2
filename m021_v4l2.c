@@ -43,381 +43,381 @@
 
 uint64_t s_ns_time_monotonic()
 {
-	static struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ((uint64_t) ts.tv_sec * G_NSEC_PER_SEC + (unsigned long long) ts.tv_nsec);
+    static struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ((uint64_t) ts.tv_sec * G_NSEC_PER_SEC + (unsigned long long) ts.tv_nsec);
 }
 
 
 /*------------------------------- Color space conversions --------------------*/
 
-// raw bayer functions 
+// raw bayer functions
 // from libv4l bayer.c, (C) 2008 Hans de Goede <j.w.r.degoede@hhs.nl>
 //Note: original bayer_to_bgr24 code from :
 //  1394-Based Digital Camera Control Library
-// 
+//
 //  Bayer pattern decoding functions
-// 
+//
 //  Written by Damien Douxchamps and Frederic Devernay
 static void convert_border_bayer_line_to_bgr24( uint8_t* bayer, uint8_t* adjacent_bayer,
-	uint8_t *bgr, int width, bool start_with_green, bool blue_line)
+    uint8_t *bgr, int width, bool start_with_green, bool blue_line)
 {
-	int t0, t1;
+    int t0, t1;
 
-	if (start_with_green) 
-	{
-	/* First pixel */
-		if (blue_line) 
-		{
-			*bgr++ = bayer[1];
-			*bgr++ = bayer[0];
-			*bgr++ = adjacent_bayer[0];
-		} 
-		else 
-		{
-			*bgr++ = adjacent_bayer[0];
-			*bgr++ = bayer[0];
-			*bgr++ = bayer[1];
-		}
-		/* Second pixel */
-		t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
-		t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
-		if (blue_line) 
-		{
-			*bgr++ = bayer[1];
-			*bgr++ = t0;
-			*bgr++ = t1;
-		} 
-		else 
-		{
-			*bgr++ = t1;
-			*bgr++ = t0;
-			*bgr++ = bayer[1];
-		}
-		bayer++;
-		adjacent_bayer++;
-		width -= 2;
-	} 
-	else 
-	{
-		/* First pixel */
-		t0 = (bayer[1] + adjacent_bayer[0] + 1) >> 1;
-		if (blue_line) 
-		{
-			*bgr++ = bayer[0];
-			*bgr++ = t0;
-			*bgr++ = adjacent_bayer[1];
-		} 
-		else 
-		{
-			*bgr++ = adjacent_bayer[1];
-			*bgr++ = t0;
-			*bgr++ = bayer[0];
-		}
-		width--;
-	}
+    if (start_with_green)
+    {
+    /* First pixel */
+        if (blue_line)
+        {
+            *bgr++ = bayer[1];
+            *bgr++ = bayer[0];
+            *bgr++ = adjacent_bayer[0];
+        }
+        else
+        {
+            *bgr++ = adjacent_bayer[0];
+            *bgr++ = bayer[0];
+            *bgr++ = bayer[1];
+        }
+        /* Second pixel */
+        t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
+        t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
+        if (blue_line)
+        {
+            *bgr++ = bayer[1];
+            *bgr++ = t0;
+            *bgr++ = t1;
+        }
+        else
+        {
+            *bgr++ = t1;
+            *bgr++ = t0;
+            *bgr++ = bayer[1];
+        }
+        bayer++;
+        adjacent_bayer++;
+        width -= 2;
+    }
+    else
+    {
+        /* First pixel */
+        t0 = (bayer[1] + adjacent_bayer[0] + 1) >> 1;
+        if (blue_line)
+        {
+            *bgr++ = bayer[0];
+            *bgr++ = t0;
+            *bgr++ = adjacent_bayer[1];
+        }
+        else
+        {
+            *bgr++ = adjacent_bayer[1];
+            *bgr++ = t0;
+            *bgr++ = bayer[0];
+        }
+        width--;
+    }
 
-	if (blue_line) 
-	{
-		for ( ; width > 2; width -= 2) 
-		{
-			t0 = (bayer[0] + bayer[2] + 1) >> 1;
-			*bgr++ = t0;
-			*bgr++ = bayer[1];
-			*bgr++ = adjacent_bayer[1];
-			bayer++;
-			adjacent_bayer++;
+    if (blue_line)
+    {
+        for ( ; width > 2; width -= 2)
+        {
+            t0 = (bayer[0] + bayer[2] + 1) >> 1;
+            *bgr++ = t0;
+            *bgr++ = bayer[1];
+            *bgr++ = adjacent_bayer[1];
+            bayer++;
+            adjacent_bayer++;
 
-			t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
-			t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
-			*bgr++ = bayer[1];
-			*bgr++ = t0;
-			*bgr++ = t1;
-			bayer++;
-			adjacent_bayer++;
-		}
-	} 
-	else 
-	{
-		for ( ; width > 2; width -= 2) 
-		{
-			t0 = (bayer[0] + bayer[2] + 1) >> 1;
-			*bgr++ = adjacent_bayer[1];
-			*bgr++ = bayer[1];
-			*bgr++ = t0;
-			bayer++;
-			adjacent_bayer++;
+            t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
+            t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
+            *bgr++ = bayer[1];
+            *bgr++ = t0;
+            *bgr++ = t1;
+            bayer++;
+            adjacent_bayer++;
+        }
+    }
+    else
+    {
+        for ( ; width > 2; width -= 2)
+        {
+            t0 = (bayer[0] + bayer[2] + 1) >> 1;
+            *bgr++ = adjacent_bayer[1];
+            *bgr++ = bayer[1];
+            *bgr++ = t0;
+            bayer++;
+            adjacent_bayer++;
 
-			t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
-			t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
-			*bgr++ = t1;
-			*bgr++ = t0;
-			*bgr++ = bayer[1];
-			bayer++;
-			adjacent_bayer++;
-		}
-	}
+            t0 = (bayer[0] + bayer[2] + adjacent_bayer[1] + 1) / 3;
+            t1 = (adjacent_bayer[0] + adjacent_bayer[2] + 1) >> 1;
+            *bgr++ = t1;
+            *bgr++ = t0;
+            *bgr++ = bayer[1];
+            bayer++;
+            adjacent_bayer++;
+        }
+    }
 
-	if (width == 2) 
-	{
-		/* Second to last pixel */
-		t0 = (bayer[0] + bayer[2] + 1) >> 1;
-		if (blue_line) 
-		{
-			*bgr++ = t0;
-			*bgr++ = bayer[1];
-			*bgr++ = adjacent_bayer[1];
-		} 
-		else 
-		{
-			*bgr++ = adjacent_bayer[1];
-			*bgr++ = bayer[1];
-			*bgr++ = t0;
-		}
-		/* Last pixel */
-		t0 = (bayer[1] + adjacent_bayer[2] + 1) >> 1;
-		if (blue_line) 
-		{
-			*bgr++ = bayer[2];
-			*bgr++ = t0;
-			*bgr++ = adjacent_bayer[1];
-		}
-		else 
-		{
-			*bgr++ = adjacent_bayer[1];
-			*bgr++ = t0;
-			*bgr++ = bayer[2];
-		}
-	} 
-	else 
-	{
-		/* Last pixel */
-		if (blue_line) 
-		{
-			*bgr++ = bayer[0];
-			*bgr++ = bayer[1];
-			*bgr++ = adjacent_bayer[1];
-		} 
-		else 
-		{
-			*bgr++ = adjacent_bayer[1];
-			*bgr++ = bayer[1];
-			*bgr++ = bayer[0];
-		}
-	}
+    if (width == 2)
+    {
+        /* Second to last pixel */
+        t0 = (bayer[0] + bayer[2] + 1) >> 1;
+        if (blue_line)
+        {
+            *bgr++ = t0;
+            *bgr++ = bayer[1];
+            *bgr++ = adjacent_bayer[1];
+        }
+        else
+        {
+            *bgr++ = adjacent_bayer[1];
+            *bgr++ = bayer[1];
+            *bgr++ = t0;
+        }
+        /* Last pixel */
+        t0 = (bayer[1] + adjacent_bayer[2] + 1) >> 1;
+        if (blue_line)
+        {
+            *bgr++ = bayer[2];
+            *bgr++ = t0;
+            *bgr++ = adjacent_bayer[1];
+        }
+        else
+        {
+            *bgr++ = adjacent_bayer[1];
+            *bgr++ = t0;
+            *bgr++ = bayer[2];
+        }
+    }
+    else
+    {
+        /* Last pixel */
+        if (blue_line)
+        {
+            *bgr++ = bayer[0];
+            *bgr++ = bayer[1];
+            *bgr++ = adjacent_bayer[1];
+        }
+        else
+        {
+            *bgr++ = adjacent_bayer[1];
+            *bgr++ = bayer[1];
+            *bgr++ = bayer[0];
+        }
+    }
 }
 
 /* From libdc1394, which on turn was based on OpenCV's Bayer decoding */
 static void bayer_to_rgbbgr24(uint8_t *bayer,
-	uint8_t *bgr, int width, int height,
-	bool start_with_green, bool blue_line)
+    uint8_t *bgr, int width, int height,
+    bool start_with_green, bool blue_line)
 {
-	/* render the first line */
-	convert_border_bayer_line_to_bgr24(bayer, bayer + width, bgr, width,
-		start_with_green, blue_line);
-	bgr += width * 3;
+    /* render the first line */
+    convert_border_bayer_line_to_bgr24(bayer, bayer + width, bgr, width,
+        start_with_green, blue_line);
+    bgr += width * 3;
 
-	/* reduce height by 2 because of the special case top/bottom line */
-	for (height -= 2; height; height--) 
-	{
-		int t0, t1;
-		/* (width - 2) because of the border */
-		uint8_t *bayerEnd = bayer + (width - 2);
+    /* reduce height by 2 because of the special case top/bottom line */
+    for (height -= 2; height; height--)
+    {
+        int t0, t1;
+        /* (width - 2) because of the border */
+        uint8_t *bayerEnd = bayer + (width - 2);
 
-		if (start_with_green) 
-		{
-			/* OpenCV has a bug in the next line, which was
-			t0 = (bayer[0] + bayer[width * 2] + 1) >> 1; */
-			t0 = (bayer[1] + bayer[width * 2 + 1] + 1) >> 1;
-			/* Write first pixel */
-			t1 = (bayer[0] + bayer[width * 2] + bayer[width + 1] + 1) / 3;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = t1;
-				*bgr++ = bayer[width];
-			} 
-			else 
-			{
-				*bgr++ = bayer[width];
-				*bgr++ = t1;
-				*bgr++ = t0;
-			}
+        if (start_with_green)
+        {
+            /* OpenCV has a bug in the next line, which was
+            t0 = (bayer[0] + bayer[width * 2] + 1) >> 1; */
+            t0 = (bayer[1] + bayer[width * 2 + 1] + 1) >> 1;
+            /* Write first pixel */
+            t1 = (bayer[0] + bayer[width * 2] + bayer[width + 1] + 1) / 3;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = t1;
+                *bgr++ = bayer[width];
+            }
+            else
+            {
+                *bgr++ = bayer[width];
+                *bgr++ = t1;
+                *bgr++ = t0;
+            }
 
-			/* Write second pixel */
-			t1 = (bayer[width] + bayer[width + 2] + 1) >> 1;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = bayer[width + 1];
-				*bgr++ = t1;
-			} 
-			else 
-			{
-				*bgr++ = t1;
-				*bgr++ = bayer[width + 1];
-				*bgr++ = t0;
-			}
-			bayer++;
-		} 
-		else 
-		{
-			/* Write first pixel */
-			t0 = (bayer[0] + bayer[width * 2] + 1) >> 1;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = bayer[width];
-				*bgr++ = bayer[width + 1];
-			} 
-			else 
-			{
-				*bgr++ = bayer[width + 1];
-				*bgr++ = bayer[width];
-				*bgr++ = t0;
-			}
-		}
+            /* Write second pixel */
+            t1 = (bayer[width] + bayer[width + 2] + 1) >> 1;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = bayer[width + 1];
+                *bgr++ = t1;
+            }
+            else
+            {
+                *bgr++ = t1;
+                *bgr++ = bayer[width + 1];
+                *bgr++ = t0;
+            }
+            bayer++;
+        }
+        else
+        {
+            /* Write first pixel */
+            t0 = (bayer[0] + bayer[width * 2] + 1) >> 1;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = bayer[width];
+                *bgr++ = bayer[width + 1];
+            }
+            else
+            {
+                *bgr++ = bayer[width + 1];
+                *bgr++ = bayer[width];
+                *bgr++ = t0;
+            }
+        }
 
-		if (blue_line) 
-		{
-			for (; bayer <= bayerEnd - 2; bayer += 2) 
-			{
-				t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
-					bayer[width * 2 + 2] + 2) >> 2;
-				t1 = (bayer[1] + bayer[width] +
-					bayer[width + 2] + bayer[width * 2 + 1] +
-					2) >> 2;
-				*bgr++ = t0;
-				*bgr++ = t1;
-				*bgr++ = bayer[width + 1];
+        if (blue_line)
+        {
+            for (; bayer <= bayerEnd - 2; bayer += 2)
+            {
+                t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
+                    bayer[width * 2 + 2] + 2) >> 2;
+                t1 = (bayer[1] + bayer[width] +
+                    bayer[width + 2] + bayer[width * 2 + 1] +
+                    2) >> 2;
+                *bgr++ = t0;
+                *bgr++ = t1;
+                *bgr++ = bayer[width + 1];
 
-				t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
-				t1 = (bayer[width + 1] + bayer[width + 3] +
-					1) >> 1;
-				*bgr++ = t0;
-				*bgr++ = bayer[width + 2];
-				*bgr++ = t1;
-			}
-		} 
-		else 
-		{
-			for (; bayer <= bayerEnd - 2; bayer += 2) 
-			{
-				t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
-					bayer[width * 2 + 2] + 2) >> 2;
-				t1 = (bayer[1] + bayer[width] +
-					bayer[width + 2] + bayer[width * 2 + 1] +
-					2) >> 2;
-				*bgr++ = bayer[width + 1];
-				*bgr++ = t1;
-				*bgr++ = t0;
+                t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
+                t1 = (bayer[width + 1] + bayer[width + 3] +
+                    1) >> 1;
+                *bgr++ = t0;
+                *bgr++ = bayer[width + 2];
+                *bgr++ = t1;
+            }
+        }
+        else
+        {
+            for (; bayer <= bayerEnd - 2; bayer += 2)
+            {
+                t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
+                    bayer[width * 2 + 2] + 2) >> 2;
+                t1 = (bayer[1] + bayer[width] +
+                    bayer[width + 2] + bayer[width * 2 + 1] +
+                    2) >> 2;
+                *bgr++ = bayer[width + 1];
+                *bgr++ = t1;
+                *bgr++ = t0;
 
-				t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
-				t1 = (bayer[width + 1] + bayer[width + 3] +
-					1) >> 1;
-				*bgr++ = t1;
-				*bgr++ = bayer[width + 2];
-				*bgr++ = t0;
-			}
-		}
+                t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
+                t1 = (bayer[width + 1] + bayer[width + 3] +
+                    1) >> 1;
+                *bgr++ = t1;
+                *bgr++ = bayer[width + 2];
+                *bgr++ = t0;
+            }
+        }
 
-		if (bayer < bayerEnd) 
-		{
-			/* write second to last pixel */
-			t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
-				bayer[width * 2 + 2] + 2) >> 2;
-			t1 = (bayer[1] + bayer[width] +
-				bayer[width + 2] + bayer[width * 2 + 1] +
-				2) >> 2;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = t1;
-				*bgr++ = bayer[width + 1];
-			} 
-			else 
-			{
-				*bgr++ = bayer[width + 1];
-				*bgr++ = t1;
-				*bgr++ = t0;
-			}
-			/* write last pixel */
-			t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = bayer[width + 2];
-				*bgr++ = bayer[width + 1];
-			} 
-			else 
-			{
-				*bgr++ = bayer[width + 1];
-				*bgr++ = bayer[width + 2];
-				*bgr++ = t0;
-			}
-			bayer++;
-		} 
-		else
-		{
-			/* write last pixel */
-			t0 = (bayer[0] + bayer[width * 2] + 1) >> 1;
-			t1 = (bayer[1] + bayer[width * 2 + 1] + bayer[width] + 1) / 3;
-			if (blue_line) 
-			{
-				*bgr++ = t0;
-				*bgr++ = t1;
-				*bgr++ = bayer[width + 1];
-			} 
-			else 
-			{
-				*bgr++ = bayer[width + 1];
-				*bgr++ = t1;
-				*bgr++ = t0;
-			}
-		}
+        if (bayer < bayerEnd)
+        {
+            /* write second to last pixel */
+            t0 = (bayer[0] + bayer[2] + bayer[width * 2] +
+                bayer[width * 2 + 2] + 2) >> 2;
+            t1 = (bayer[1] + bayer[width] +
+                bayer[width + 2] + bayer[width * 2 + 1] +
+                2) >> 2;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = t1;
+                *bgr++ = bayer[width + 1];
+            }
+            else
+            {
+                *bgr++ = bayer[width + 1];
+                *bgr++ = t1;
+                *bgr++ = t0;
+            }
+            /* write last pixel */
+            t0 = (bayer[2] + bayer[width * 2 + 2] + 1) >> 1;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = bayer[width + 2];
+                *bgr++ = bayer[width + 1];
+            }
+            else
+            {
+                *bgr++ = bayer[width + 1];
+                *bgr++ = bayer[width + 2];
+                *bgr++ = t0;
+            }
+            bayer++;
+        }
+        else
+        {
+            /* write last pixel */
+            t0 = (bayer[0] + bayer[width * 2] + 1) >> 1;
+            t1 = (bayer[1] + bayer[width * 2 + 1] + bayer[width] + 1) / 3;
+            if (blue_line)
+            {
+                *bgr++ = t0;
+                *bgr++ = t1;
+                *bgr++ = bayer[width + 1];
+            }
+            else
+            {
+                *bgr++ = bayer[width + 1];
+                *bgr++ = t1;
+                *bgr++ = t0;
+            }
+        }
 
-		/* skip 2 border pixels */
-		bayer += 2;
+        /* skip 2 border pixels */
+        bayer += 2;
 
-		blue_line = !blue_line;
-		start_with_green = !start_with_green;
-	}
+        blue_line = !blue_line;
+        start_with_green = !start_with_green;
+    }
 
-	/* render the last line */
-	convert_border_bayer_line_to_bgr24(bayer + width, bayer, bgr, width,
-		!start_with_green, !blue_line);
+    /* render the last line */
+    convert_border_bayer_line_to_bgr24(bayer + width, bayer, bgr, width,
+        !start_with_green, !blue_line);
 }
 
-static void 
+static void
 bayer_to_rgb24(uint8_t *pBay, uint8_t *pRGB24, int width, int height)
 {
     bayer_to_rgbbgr24(pBay, pRGB24, width, height, true, true);
 }
 
-static void 
+static void
 bayer_to_bgr24(uint8_t *pBay, uint8_t *pRGB24, int width, int height)
 {
     bayer_to_rgbbgr24(pBay, pRGB24, width, height, true, false);
 }
 
 static void
-rgb2yuyv(uint8_t *prgb, uint8_t *pyuv, int width, int height) 
+rgb2yuyv(uint8_t *prgb, uint8_t *pyuv, int width, int height)
 {
 
-	int i=0;
-	for(i=0;i<(width*height*3);i=i+6) 
-	{
-		/* y */ 
-		*pyuv++ =CLIP(0.299 * (prgb[i] - 128) + 0.587 * (prgb[i+1] - 128) + 0.114 * (prgb[i+2] - 128) + 128);
-		/* u */
-		*pyuv++ =CLIP(((- 0.147 * (prgb[i] - 128) - 0.289 * (prgb[i+1] - 128) + 0.436 * (prgb[i+2] - 128) + 128) +
-			(- 0.147 * (prgb[i+3] - 128) - 0.289 * (prgb[i+4] - 128) + 0.436 * (prgb[i+5] - 128) + 128))/2);
-		/* y1 */ 
-		*pyuv++ =CLIP(0.299 * (prgb[i+3] - 128) + 0.587 * (prgb[i+4] - 128) + 0.114 * (prgb[i+5] - 128) + 128); 
-		/* v*/
-		*pyuv++ =CLIP(((0.615 * (prgb[i] - 128) - 0.515 * (prgb[i+1] - 128) - 0.100 * (prgb[i+2] - 128) + 128) +
-			(0.615 * (prgb[i+3] - 128) - 0.515 * (prgb[i+4] - 128) - 0.100 * (prgb[i+5] - 128) + 128))/2);
-	}
+    int i=0;
+    for(i=0;i<(width*height*3);i=i+6)
+    {
+        /* y */
+        *pyuv++ =CLIP(0.299 * (prgb[i] - 128) + 0.587 * (prgb[i+1] - 128) + 0.114 * (prgb[i+2] - 128) + 128);
+        /* u */
+        *pyuv++ =CLIP(((- 0.147 * (prgb[i] - 128) - 0.289 * (prgb[i+1] - 128) + 0.436 * (prgb[i+2] - 128) + 128) +
+            (- 0.147 * (prgb[i+3] - 128) - 0.289 * (prgb[i+4] - 128) + 0.436 * (prgb[i+5] - 128) + 128))/2);
+        /* y1 */
+        *pyuv++ =CLIP(0.299 * (prgb[i+3] - 128) + 0.587 * (prgb[i+4] - 128) + 0.114 * (prgb[i+5] - 128) + 128);
+        /* v*/
+        *pyuv++ =CLIP(((0.615 * (prgb[i] - 128) - 0.515 * (prgb[i+1] - 128) - 0.100 * (prgb[i+2] - 128) + 128) +
+            (0.615 * (prgb[i+3] - 128) - 0.515 * (prgb[i+4] - 128) - 0.100 * (prgb[i+5] - 128) + 128))/2);
+    }
 }
 
 
@@ -431,52 +431,52 @@ rgb2yuyv(uint8_t *prgb, uint8_t *pyuv, int width, int height)
 */
 static int xioctl(int fd, int IOCTL_X, void *arg)
 {
-	int ret = 0;
-	int tries= IOCTL_RETRY;
-	do
-	{
-		ret = v4l2_ioctl(fd, IOCTL_X, arg);
-	}
-	while (ret && tries-- &&
-			((errno == EINTR) || (errno == EAGAIN) || (errno == ETIMEDOUT)));
+    int ret = 0;
+    int tries= IOCTL_RETRY;
+    do
+    {
+        ret = v4l2_ioctl(fd, IOCTL_X, arg);
+    }
+    while (ret && tries-- &&
+            ((errno == EINTR) || (errno == EAGAIN) || (errno == ETIMEDOUT)));
 
-	if (ret && (tries <= 0)) fprintf(stderr, "ioctl (%i) retried %i times - giving up: %s)\n", IOCTL_X, IOCTL_RETRY, strerror(errno));
+    if (ret && (tries <= 0)) fprintf(stderr, "ioctl (%i) retried %i times - giving up: %s)\n", IOCTL_X, IOCTL_RETRY, strerror(errno));
 
-	return ret;
+    return ret;
 }
 
 static int check_videoIn(const char * devicename, m021_t *vd)
 {
-	if (vd == NULL)
-		return VDIN_ALLOC_ERR;
+    if (vd == NULL)
+        return VDIN_ALLOC_ERR;
 
-	memset(&vd->cap, 0, sizeof(struct v4l2_capability));
+    memset(&vd->cap, 0, sizeof(struct v4l2_capability));
 
-	if ( xioctl(vd->fd, VIDIOC_QUERYCAP, &vd->cap) < 0 )
-	{
-		perror("VIDIOC_QUERYCAP error");
-		return VDIN_QUERYCAP_ERR;
-	}
+    if ( xioctl(vd->fd, VIDIOC_QUERYCAP, &vd->cap) < 0 )
+    {
+        perror("VIDIOC_QUERYCAP error");
+        return VDIN_QUERYCAP_ERR;
+    }
 
-	if ( ( vd->cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) == 0)
-	{
-		fprintf(stderr, "Error opening device %s: video capture not supported.\n", devicename);
-		return VDIN_QUERYCAP_ERR;
-	}
-	if (!(vd->cap.capabilities & V4L2_CAP_STREAMING))
-	{
-		fprintf(stderr, "%s does not support streaming i/o\n", devicename);
-		return VDIN_QUERYCAP_ERR;
-	}
+    if ( ( vd->cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) == 0)
+    {
+        fprintf(stderr, "Error opening device %s: video capture not supported.\n", devicename);
+        return VDIN_QUERYCAP_ERR;
+    }
+    if (!(vd->cap.capabilities & V4L2_CAP_STREAMING))
+    {
+        fprintf(stderr, "%s does not support streaming i/o\n", devicename);
+        return VDIN_QUERYCAP_ERR;
+    }
 
-	printf("Init. %s (location: %s)\n", vd->cap.card, vd->cap.bus_info);
+    printf("Init. %s (location: %s)\n", vd->cap.card, vd->cap.bus_info);
 
-	struct v4l2_frmivalenum fival;
-	memset(&fival, 0, sizeof(fival));
-	fival.index = 0;
-	fival.pixel_format = 1448695129;
-	fival.width = 800;
-	fival.height = 460;
+    struct v4l2_frmivalenum fival;
+    memset(&fival, 0, sizeof(fival));
+    fival.index = 0;
+    fival.pixel_format = 1448695129;
+    fival.width = 800;
+    fival.height = 460;
 
     while (xioctl(vd->fd, VIDIOC_ENUM_FRAMEINTERVALS, &fival) == 0) {
         fival.index++;
@@ -511,19 +511,19 @@ static int map_buff(m021_t *vd)
     for (i = 0; i < NB_BUFFER; i++)
     {
         vd->mem[i] = v4l2_mmap( NULL, // start anywhere
-			vd->buff_length[i],
-			PROT_READ | PROT_WRITE,
-			MAP_SHARED,
-			vd->fd,
-			vd->buff_offset[i]);
-		if (vd->mem[i] == MAP_FAILED)
-		{
-			perror("Unable to map buffer");
-			return VDIN_MMAP_ERR;
-		}
-	}
+            vd->buff_length[i],
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED,
+            vd->fd,
+            vd->buff_offset[i]);
+        if (vd->mem[i] == MAP_FAILED)
+        {
+            perror("Unable to map buffer");
+            return VDIN_MMAP_ERR;
+        }
+    }
 
-	return (0);
+    return (0);
 }
 
 static int query_buff(m021_t *vd)
@@ -595,19 +595,19 @@ static int video_enable(m021_t *vd)
 
 static int init_v4l2(m021_t *vd, int *format, int width, int height)
 {
-	int ret = 0;
+    int ret = 0;
 
-	// set format
-	vd->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	vd->fmt.fmt.pix.width = width;
-	vd->fmt.fmt.pix.height = height;
-	vd->fmt.fmt.pix.pixelformat = *format;
-	vd->fmt.fmt.pix.field = V4L2_FIELD_ANY;
+    // set format
+    vd->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    vd->fmt.fmt.pix.width = width;
+    vd->fmt.fmt.pix.height = height;
+    vd->fmt.fmt.pix.pixelformat = *format;
+    vd->fmt.fmt.pix.field = V4L2_FIELD_ANY;
 
-	ret = xioctl(vd->fd, VIDIOC_S_FMT, &vd->fmt);
-	if (ret < 0)
-	{
-		perror("VIDIOC_S_FORMAT - Unable to set format");
+    ret = xioctl(vd->fd, VIDIOC_S_FMT, &vd->fmt);
+    if (ret < 0)
+    {
+        perror("VIDIOC_S_FORMAT - Unable to set format");
         return VDIN_FORMAT_ERR;
     }
     if (((int)vd->fmt.fmt.pix.width != width) ||
@@ -677,57 +677,57 @@ static void frame_init(uint8_t *framebuffer, int width, int height)
 
 static void clear_v4l2(m021_t *videoIn)
 {
-	v4l2_close(videoIn->fd);
-	videoIn->fd=0;
+    v4l2_close(videoIn->fd);
+    videoIn->fd=0;
 
     pthread_mutex_destroy(&videoIn->mutex);
 }
 
 static void bayer16_convert_bayer8(int16_t *inbuf, uint8_t *outbuf, int width, int height, int shift)
 {
-	int i = 0, j = 0;
+    int i = 0, j = 0;
 
-	for(i = 0; i < height; i++)
-	{
-		for(j = 0; j < width; j++)
-		{
-			outbuf[i * width + j] = (inbuf[i * width + j] >> shift);
-		}
-	}
+    for(i = 0; i < height; i++)
+    {
+        for(j = 0; j < width; j++)
+        {
+            outbuf[i * width + j] = (inbuf[i * width + j] >> shift);
+        }
+    }
 }
 
 static int check_frame_available(m021_t *vd)
 {
     int ret = VDIN_OK;
     fd_set rdset;
-	struct timeval timeout;
-	//make sure streaming is on
-	if (!vd->isstreaming)
-		if (video_enable(vd))
-		{
-			return VDIN_STREAMON_ERR;
-		}
+    struct timeval timeout;
+    //make sure streaming is on
+    if (!vd->isstreaming)
+        if (video_enable(vd))
+        {
+            return VDIN_STREAMON_ERR;
+        }
 
-	FD_ZERO(&rdset);
-	FD_SET(vd->fd, &rdset);
-	timeout.tv_sec = 1; // 1 sec timeout
-	timeout.tv_usec = 0;
-	// select - wait for data or timeout
-	ret = select(vd->fd + 1, &rdset, NULL, NULL, &timeout);
-	if (ret < 0)
-	{
-		perror(" Could not grab image (select error)");
-		return VDIN_SELEFAIL_ERR;
-	}
-	else if (ret == 0)
-	{
-		perror(" Could not grab image (select timeout)");
-		return VDIN_SELETIMEOUT_ERR;
-	}
-	else if ((ret > 0) && (FD_ISSET(vd->fd, &rdset)))
-		return VDIN_OK;
-	else
-		return VDIN_UNKNOWN_ERR;
+    FD_ZERO(&rdset);
+    FD_SET(vd->fd, &rdset);
+    timeout.tv_sec = 1; // 1 sec timeout
+    timeout.tv_usec = 0;
+    // select - wait for data or timeout
+    ret = select(vd->fd + 1, &rdset, NULL, NULL, &timeout);
+    if (ret < 0)
+    {
+        perror(" Could not grab image (select error)");
+        return VDIN_SELEFAIL_ERR;
+    }
+    else if (ret == 0)
+    {
+        perror(" Could not grab image (select timeout)");
+        return VDIN_SELETIMEOUT_ERR;
+    }
+    else if ((ret > 0) && (FD_ISSET(vd->fd, &rdset)))
+        return VDIN_OK;
+    else
+        return VDIN_UNKNOWN_ERR;
 
 }
 
@@ -772,7 +772,7 @@ static void add(uint8_t * val, int8_t inc)
     else if (newval > 255)
         *val = 255;
 
-    else 
+    else
         * val = newval;
 }
 
@@ -803,10 +803,10 @@ int m021_init(int id, m021_t * vd, int width, int height)
 
     pthread_mutex_init(&vd->mutex, NULL);
 
-	vd->available_exp[0]=-1;
-	vd->available_exp[1]=-1;
-	vd->available_exp[2]=-1;
-	vd->available_exp[3]=-1;
+    vd->available_exp[0]=-1;
+    vd->available_exp[1]=-1;
+    vd->available_exp[2]=-1;
+    vd->available_exp[3]=-1;
 
     /*start udev device monitoring*/
     /* Set up a monitor to monitor v4l2 devices */
@@ -829,19 +829,19 @@ int m021_init(int id, m021_t * vd, int width, int height)
         return ret;
     }
 
-	//reset v4l2_format
-	memset(&vd->fmt, 0, sizeof(struct v4l2_format));
+    //reset v4l2_format
+    memset(&vd->fmt, 0, sizeof(struct v4l2_format));
 
-	// populate video capabilities structure array
-	// should only be called after all m021 struct elements
-	// have been initialized
-	if((ret = check_videoIn(devname, vd)) != VDIN_OK)
-	{
-		clear_v4l2(vd);
-		return ret;
-	}
+    // populate video capabilities structure array
+    // should only be called after all m021 struct elements
+    // have been initialized
+    if((ret = check_videoIn(devname, vd)) != VDIN_OK)
+    {
+        clear_v4l2(vd);
+        return ret;
+    }
 
-	ret = 0; //clean ret code
+    ret = 0; //clean ret code
 
     vd->format = 0x56595559;
 
