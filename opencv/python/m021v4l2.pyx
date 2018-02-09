@@ -61,7 +61,9 @@ cdef class m021v4l:
         self.rcorr = rcorrect
         self.count = 0
 
-        m021_v4l2.m021_init(devNum, &self._obj, self.width, self.height)
+        cdef int ret = m021_v4l2.m021_init(devNum, &self._obj, self.width, self.height)
+        if ( ret != 0 ):
+            raise Exception("Failed to Open Camera: {}".format(ret))
 
     def __dealloc__(self):
         m021_v4l2.m021_free(&(self._obj))
