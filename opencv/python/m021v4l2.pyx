@@ -38,6 +38,9 @@ cdef double _get_ts():
     tsTime += (fracTime / 1e9)
     return(tsTime)
 
+TRIGGER_MODE_AUTO = m021_v4l2.M021_TRIGGER_MODE_AUTO_gc
+TRIGGER_MODE_RISING = m021_v4l2.M021_TRIGGER_MODE_RISING_gc
+TRIGGER_MODE_FALLING = m021_v4l2.M021_TRIGGER_MODE_FALLING_gc
 
 cdef class m021v4l:
     """ M021C camera Python Wrapper for v4l2.
