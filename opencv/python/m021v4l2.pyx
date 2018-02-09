@@ -50,6 +50,7 @@ cdef class m021v4l:
     cdef int bcorr
     cdef int gcorr
     cdef int rcorr
+    cdef int count
 
     def __cinit__(self, int devNum, int width, int height, int bcorrect, int gcorrect, int rcorrect):
         self.devNum = devNum
@@ -58,6 +59,7 @@ cdef class m021v4l:
         self.bcorr = bcorrect
         self.gcorr = gcorrect
         self.rcorr = rcorrect
+        self.count = 0
 
         m021_v4l2.m021_init(devNum, &self._obj, self.width, self.height)
 
@@ -78,8 +80,11 @@ cdef class m021v4l:
         if ( ret != 0 ):
             raise Exception("Invalid Image: {}".format(ret))
         ts = _get_ts()
-
+        self.count += 1
         return(frame, ts)
+
+    def get_count(self):
+        return(self.count)
 
     def set_trigger_mode(self, mode):
         cdef int ret = m021_v4l2.m021_set_trigger_mode(&self._obj, mode)
