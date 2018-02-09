@@ -30,6 +30,21 @@
 #include <errno.h>
 
 #include "m021_v4l2.h"
+#include <linux/uvcvideo.h>
+#include <linux/usb/video.h>
+
+// define test register address
+#define TEST_REG_ADDR   (0x3012)
+
+
+// define the Leopard Imaging USB3.0 camera
+// uvc extension id
+#define CY_FX_UVC_XU_REG_RW            (0x0e00)
+#define CY_FX_UVC_XU_TRIGGER_SOFT		   (0x0900)
+#define CY_FX_UVC_XU_TRIGGER_MODE		   (0x0b00)
+#define CY_FX_UVC_XU_TRIGGER_DELAY	 	 (0x0a00)
+#define CY_FX_UVC_XU_UUID_HWFW_REV     (0x0700)
+#define CY_FX_UVC_XU_EXPOSURE          (0x0600)
 
 #define G_NSEC_PER_SEC 1000000000LL
 
@@ -886,9 +901,265 @@ int m021_grab_bgr(m021_t * vd, uint8_t * frame, int8_t bcorrect, int8_t gcorrect
     return ret;
 }
 
+int m021_set_trigger_mode(m021_t *vd, M021_TRIGGER_MODE_t mode) {
+  if ( vd == NULL ) {
+    return(1);
+  }
+
+  uint8_t value[4] = {
+    (uint8_t)mode, 0, 0, 0
+  };
+
+  struct uvc_xu_control_query xu_query = {
+		.unit		= 3, //has to be unit 3 (per leopard imaging)
+		.selector	= CY_FX_UVC_XU_TRIGGER_MODE>>8,
+		.query		= UVC_SET_CUR,
+		.size		= sizeof(uint16_t), //TD
+		.data		= value,
+	};
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  return(ret);
+}
+
+int m021_get_trigger_mode(m021_t *vd, M021_TRIGGER_MODE_t *mode) {
+  if ( vd == NULL || mode == NULL ) {
+    return(1);
+  }
+
+  uint8_t value[4] = {0};
+
+  struct uvc_xu_control_query xu_query = {
+		.unit		= 3, //has to be unit 3 (per leopard imaging)
+		.selector	= CY_FX_UVC_XU_TRIGGER_MODE>>8,
+		.query		= UVC_GET_CUR,
+		.size		= sizeof(uint16_t), //TD
+		.data		= value,
+	};
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+  uint8_t tmp = value[0];
+  *mode = (M021_TRIGGER_MODE_t)tmp;
+  return(ret);
+}
+
+int m021_set_trigger_delay(m021_t *vd, uint32_t delay_ms) {
+  if ( vd == NULL ) {
+    return(1);
+  }
+  uint8_t value[4] = {0};
+  struct uvc_xu_control_query xu_query = {
+    .unit		= 3, //has to be unit 3 (per leopard imaging)
+    .selector	= CY_FX_UVC_XU_TRIGGER_DELAY >> 8,
+    .query		= UVC_SET_CUR,
+    .size		= 4, //TD
+    .data		= value,
+  };
+
+  value[0] = (uint8_t)(delay_ms & 0xFF);
+  value[1] = (uint8_t)((delay_ms >> 8) & 0xFF);
+  value[2] = (uint8_t)((delay_ms >> 16) & 0xFF);
+  value[3] = (uint8_t)((delay_ms >> 24) & 0xFF);
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  return(ret);
+}
+
+int m021_get_trigger_delay(m021_t *vd, uint32_t *delay_ms) {
+  if ( vd == NULL || delay_ms == NULL) {
+    return(1);
+  }
+
+  uint8_t value[4] = {0};
+  struct uvc_xu_control_query xu_query = {
+    .unit		= 3, //has to be unit 3 (per leopard imaging)
+    .selector	= CY_FX_UVC_XU_TRIGGER_DELAY >> 8,
+    .query		= UVC_GET_CUR,
+    .size		= 4, //TD
+    .data		= value,
+  };
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+
+  uint32_t temp = (value[3] << 24);
+  temp |= (value[2] << 16);
+  temp |= (value[1] << 8);
+  temp |= value[0];
+  *delay_ms = temp;
+
+  return(ret);
+}
+
+int m021_set_register(m021_t *vd, uint16_t addr, uint16_t val) {
+  if ( vd == NULL ) {
+    return(1);
+  }
+
+  uint8_t value[8];
+  memset(value, 0, sizeof(value));
+
+  value[0] = 1;
+  value[1] = (addr >> 8) & 0xFF;
+	value[2] = addr & 0xFF;
+	value[3] = (val >> 8) & 0xFF;
+	value[4] = val & 0xFF;
+
+  struct uvc_xu_control_query xu_query = {
+		.unit		= 3, //has to be unit 3 (per leopard imaging)
+		.selector	= CY_FX_UVC_XU_REG_RW >> 8,
+		.query		= UVC_SET_CUR,
+		.size		= 5, //TD
+		.data		= value,
+	};
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  return(ret);
+}
+
+int m021_get_register(m021_t *vd, uint16_t addr, uint16_t *val) {
+  if ( vd == NULL || val == NULL ) {
+    return(1);
+  }
+
+  uint8_t value[8] = {0};
+  struct uvc_xu_control_query xu_query = {
+		.unit		= 3, //has to be unit 3 (per leopard imaging)
+		.selector	= CY_FX_UVC_XU_REG_RW >> 8,
+		.query		= UVC_SET_CUR,
+		.size		= 5, //TD
+		.data		= value,
+	};
+
+  value[0] = 0; // indicates a read
+  value[1] = (addr >> 8) & 0xFF;
+	value[2] = addr & 0xFF;
+  value[3] = 0;
+  value[4] = 0;
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+
+	xu_query.query = UVC_GET_CUR;
+	value[0] = 0;
+  value[1] = (addr >> 8) & 0xFF;
+	value[2] = addr & 0xFF;
+	value[3] = 0;
+	value[4] = 0;
+  ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+
+	*val = (value[3] << 8) + value[4];
+
+  return(0);
+}
+
+#define HWREV_LEN   (2)
+#define FWREV_LEN   (2)
+
+#define UUID_LEN    (36+9) // UUID = 36 chars, Date Code = 9 chars
+
+int m021_get_uuid_hwfw_rev(
+  m021_t *vd,
+  char *uuid, uint32_t uuid_len,
+  uint16_t *hw,
+  uint16_t *fw
+  ) {
+  if ( vd == NULL || uuid == NULL || hw == NULL || fw == NULL ) {
+    return(1);
+  }
+
+  uint32_t msgLen = HWREV_LEN + FWREV_LEN + UUID_LEN;
+  uint8_t value[HWREV_LEN + FWREV_LEN + UUID_LEN];
+  memset(value, 0, sizeof(value));
+
+  struct uvc_xu_control_query xu_query = {
+		.unit		= 3, //has to be unit 3 (per leopard imaging)
+		.selector	= CY_FX_UVC_XU_UUID_HWFW_REV >> 8,
+		.query		= UVC_GET_CUR,
+		.size		= msgLen, //TD
+		.data		= value,
+	};
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+
+  *hw = (uint16_t)(value[0] | ((uint16_t)value[1] << 8));
+  *fw = (uint16_t)(value[2] | ((uint16_t)value[3] << 8));
+
+  if ( uuid_len < msgLen ) {
+    msgLen= uuid_len;
+  }
+  memcpy( uuid, &value[4], msgLen);
+  uuid[msgLen] = 0;
+  return(0);
+}
+
+int m021_set_exposure(m021_t *vd, uint16_t val) {
+  if ( vd == NULL) {
+    return(1);
+  }
+
+  uint8_t value[4] = {0};
+  struct uvc_xu_control_query xu_query = {
+    .unit		= 3, //has to be unit 3 (per leopard imaging)
+    .selector	= CY_FX_UVC_XU_EXPOSURE >> 8,
+    .query		= UVC_SET_CUR,
+    .size		= 2, //TD
+    .data		= value,
+  };
+
+  value[0] = (uint8_t)(val & 0xFF);
+  value[1] = (uint8_t)((val >> 8) & 0xFF);
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  return(ret);
+}
+
+int m021_get_exposure(m021_t *vd, uint16_t *val)
+{
+  if ( vd == NULL || val == NULL) {
+    return(1);
+  }
+
+  uint8_t value[4] = {0};
+  struct uvc_xu_control_query xu_query = {
+    .unit		= 3, //has to be unit 3 (per leopard imaging)
+    .selector	= CY_FX_UVC_XU_EXPOSURE >> 8,
+    .query		= UVC_GET_CUR,
+    .size		= 2, //TD
+    .data		= value,
+  };
+
+  int ret = xioctl(vd->fd, UVCIOC_CTRL_QUERY, &xu_query);
+  if ( ret != 0 ) {
+    return(ret);
+  }
+
+  uint16_t temp = (uint16_t)(value[0] | ((uint16_t)value[1] << 8));
+  *val = temp;
+
+  return(ret);
+}
+
 void m021_free(m021_t * vd)
 {
-    free(vd->framebuffer);
-    free(vd->tmpbuffer);
-    free(vd->tmpbuffer1);
+  if ( vd == NULL) {
+    return;
+  }
+
+  free(vd->framebuffer);
+  free(vd->tmpbuffer);
+  free(vd->tmpbuffer1);
 }

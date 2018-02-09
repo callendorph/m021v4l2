@@ -49,6 +49,12 @@
 
 #define NB_BUFFER 4
 
+typedef enum _M021_TRIGGER_MODE {
+  M021_TRIGGER_MODE_AUTO_gc = 0,
+  M021_TRIGGER_MODE_RISING_gc = 1,
+  M021_TRIGGER_MODE_FALLING_gc = 3
+} M021_TRIGGER_MODE_t;
+
 typedef struct m021 {
 
     pthread_mutex_t mutex;
@@ -111,6 +117,51 @@ int m021_grab_yuyv(m021_t * m021, uint8_t * frame);
 int m021_grab_bgr(m021_t * m021, uint8_t * frame, int8_t bcorrect, int8_t gcorrect, int8_t rcorrect);
 
 /**
+ * Get/Set the trigger mode for the camera - this may not work
+ *   for all cameras. Tested with the LI-USB30-M021
+ * @param vd video object
+ * @param mode value to set or buffer to store result.
+ * @return error code, 0 on success
+ */
+int m021_set_trigger_mode(m021_t *vd, M021_TRIGGER_MODE_t mode);
+int m021_get_trigger_mode(m021_t *vd, M021_TRIGGER_MODE_t *mode);
+
+/**
+ * Get/Set the trigger delay in ms for the camera - this may not work
+ *   for all cameras. Tested with the LI-USB30-M021
+ * @param vd video object
+ * @param delay delay from start of trigger to start of exposure in
+ *    milliseconds.
+ * @return error code, 0 on success
+ */
+int m021_set_trigger_delay(m021_t *vd, uint32_t delay_ms);
+int m021_get_trigger_delay(m021_t *vd, uint32_t *delay_ms);
+
+/**
+ * Get the hardware/firmware version numbers and
+ *    the UUID number.
+ */
+
+int m021_get_uuid_hwfw_rev(m021_t *vd,
+  char *uuid, uint32_t uuid_len,
+  uint16_t *hw, uint16_t *fw
+  );
+
+/**
+ * Get/Set registers on the image array of the camera. This
+ * may not work for all cameras. Tested with the LI-USB30-M021
+ */
+int m021_set_register(m021_t *vd, uint16_t addr, uint16_t val);
+int m021_get_register(m021_t *vd, uint16_t addr, uint16_t *val);
+
+/**
+ * Get/Set the absolute exposure of the image array. This
+ *  may not work for all cameras. Tested with the LI-USB30-M021
+ */
+int m021_set_exposure(m021_t *vd, uint16_t val);
+int m021_get_exposure(m021_t *vd, uint16_t *val);
+
+/**
   * Frees storage allocated for m021 data structure.
   * @param m021 pointer to m021_t data structure to be freed
   * This routine should be called on its own thread, separate from the thread on which the
@@ -119,4 +170,3 @@ int m021_grab_bgr(m021_t * m021, uint8_t * frame, int8_t bcorrect, int8_t gcorre
 void m021_free(m021_t * m021);
 
 #endif
-

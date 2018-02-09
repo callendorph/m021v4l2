@@ -10,6 +10,7 @@
 import numpy as np
 cimport numpy as np
 
+from libc.stdint cimport uint16_t, uint32_t, int32_t, uint8_t
 from posix.time cimport clock_gettime, CLOCK_REALTIME, timespec
 
 DTYPE = np.uint8
@@ -66,9 +67,77 @@ cdef class m021v4l:
         )
         cdef DTYPE_t* pframe = &(frame[0,0,0])
 
-        ret = m021_v4l2.m021_grab_bgr(&self._obj, pframe, self.bcorr, self.gcorr, self.rcorr)
+        cdef int ret = m021_v4l2.m021_grab_bgr(&self._obj, pframe, self.bcorr, self.gcorr, self.rcorr)
         if ( ret != 0 ):
             raise Exception("Invalid Image: {}".format(ret))
         ts = _get_ts()
 
         return(frame, ts)
+
+    def set_trigger_mode(self, mode):
+        cdef int ret = m021_v4l2.m021_set_trigger_mode(&self._obj, mode)
+        if ( ret != 0 ):
+            raise Exception("Failed to Set Trigger mode: {}".format(ret))
+
+    def get_trigger_mode(self):
+        cdef m021_v4l2.M021_TRIGGER_MODE_t mode
+        cdef int ret = m021_v4l2.m021_get_trigger_mode(&self._obj, &mode)
+        if ( ret != 0 ):
+            raise Exception("Failed to Set Trigger mode: {}".format(ret))
+        return(mode)
+
+    def set_trigger_delay(self, delay):
+        cdef int ret = m021_v4l2.m021_set_trigger_delay(&self._obj, delay)
+        if ( ret != 0 ):
+            raise Exception("Failed to Set Trigger Delay: {}".format(ret))
+
+    def get_trigger_delay(self):
+        cdef uint32_t delay
+        cdef int ret = m021_v4l2.m021_get_trigger_delay(&self._obj, &delay)
+        if ( ret != 0 ):
+            raise Exception("Failed to Get Trigger Delay: {}".format(ret))
+        return(delay)
+
+    def get_uuid_hwfw_rev(self):
+        cdef char uuid[64]
+        cdef uint16_t hwRev;
+        cdef uint16_t fwRev;
+        cdef int ret = m021_v4l2.m021_get_uuid_hwfw_rev(
+            &self._obj, uuid, 64, &hwRev, &fwRev
+            )
+        if ( ret != 0 ):
+            raise Exception("Failed to Get UUID/HW/FWRev: {}".format(ret))
+
+        cdef bytes pyUuid = uuid
+        return({
+            "uuid" : pyUuid,
+            "hw_rev" : hwRev,
+            "fw_rev" : fwRev
+        })
+
+    def set_register(self, addr, val):
+        """ Set register values on the image array - don't use these
+        unless you know what you are doing.
+        """
+        cdef int ret = m021_v4l2.m021_set_register(&self._obj, addr, val)
+        if ( ret != 0 ):
+            raise Exception("Failed to Set Register: {}".format(ret))
+
+    def get_register(self, addr):
+        cdef uint16_t val
+        cdef int ret = m021_v4l2.m021_get_register(&self._obj, addr, &val)
+        if ( ret != 0 ):
+            raise Exception("Failed to Get Register: {}".format(ret))
+        return(val)
+
+    def set_exposure(self, exp):
+        cdef int ret = m021_v4l2.m021_set_exposure(&self._obj,exp)
+        if ( ret != 0 ):
+            raise Exception("Failed to Set Exposure: {}".format(ret))
+
+    def get_exposure(self):
+        cdef uint16_t exp
+        cdef int ret = m021_v4l2.m021_get_exposure(&self._obj, &exp)
+        if ( ret != 0 ):
+            raise Exception("Failed to Get Exposure: {}".format(ret))
+        return(exp)
