@@ -20,8 +20,8 @@ LIBS = -L /usr/lib/x86_64-linux-gnu -lopencv_core -lopencv_highgui -lopencv_imgp
 	   -lpthread -lv4l2 -ludev
 
 OBJS = m021_v4l2_opencv.o m021_v4l2.o m021_thread_support.o
-
-CFLAGS = -Wall
+BVER=$(shell git rev-parse HEAD)
+CFLAGS = -Wall -I .. -I ../.. -D BUILD_VERSION="$(BVER)"
 
 all: capture flowcap
 
@@ -47,16 +47,16 @@ flowcap.o: flowcap.cpp
 	g++ $(CFLAGS) -c flowcap.cpp
 
 m021_v4l2.o: ../../m021_v4l2.c
-	g++ -c -I .. -I ../.. ../../m021_v4l2.c 
+	g++ -c $(CFLAGS) ../../m021_v4l2.c
 
-m021_v4l2_opencv.o: m021_v4l2_opencv.cpp  
-	g++ -c -I .. -I ../.. m021_v4l2_opencv.cpp 
+m021_v4l2_opencv.o: m021_v4l2_opencv.cpp
+	g++ -c $(CFLAGS) m021_v4l2_opencv.cpp
 
 m021_thread_support.o: ../m021_thread_support.c ../m021_thread_support.h
-	g++ -c -I.. -I../.. ../m021_thread_support.c
+	g++ -c $(CFLAGS) ../m021_thread_support.c
 
 clean:
-	rm -rf capture flowcap *.o Documentation *~ 
+	rm -rf capture flowcap *.o Documentation *~
 
 edit:
 	vim capture.cpp
@@ -65,5 +65,5 @@ doc: Doxyfile
 	doxygen
 
 commit:
-	git commit -a --allow-empty-message -m '' 
+	git commit -a --allow-empty-message -m ''
 	git push
