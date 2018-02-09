@@ -56,7 +56,7 @@
 //set ioctl retries to 4 - linux uvc as increased timeout from 1000 to 3000 ms
 #define IOCTL_RETRY 4
 
-uint64_t s_ns_time_monotonic()
+uint64_t s_ns_time_monotonic(void)
 {
     static struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
