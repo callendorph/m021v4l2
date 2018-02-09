@@ -168,5 +168,10 @@ int m021_get_exposure(m021_t *vd, uint16_t *val);
   * grab routines are called.
   */
 void m021_free(m021_t * m021);
+/**
+ * Return the build version string for this library
+ * @return githash as a c-string
+ */
+const char *m021_version(void);
 
 #endif

@@ -45,3 +45,4 @@ cdef extern from "m021_v4l2.h":
   int m021_get_exposure(m021_t *vd, uint16_t *val);
 
   void m021_free(m021_t * m021)
+  const char *m021_version()

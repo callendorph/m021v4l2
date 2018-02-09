@@ -1163,3 +1163,7 @@ void m021_free(m021_t * vd)
   free(vd->tmpbuffer);
   free(vd->tmpbuffer1);
 }
+
+const char *m021_version(void) {
+    return(BUILD_VERSION);
+}

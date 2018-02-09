@@ -18,6 +18,13 @@ ctypedef np.uint8_t DTYPE_t
 
 cimport m021_v4l2 # camera defs in m021_v4l2.pxd
 
+__version__ = "0.2.0"
+
+cdef char *_get_build_version():
+    cdef bytes bver = m021_v4l2.m021_version()
+    return(bver)
+
+__build__ = _get_build_version()
 
 cdef double _get_ts():
     """ Use posix.time to get the current timestamp of an image.
